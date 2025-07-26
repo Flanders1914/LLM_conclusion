@@ -1,6 +1,7 @@
-# python scripts/evaluate_result.py --input_path output/rct_dev.jsonl --output_path output/rct_dev_results.json
-# python scripts/evaluate_result.py --input_path output/non_rct_dev.jsonl --output_path output/non_rct_dev_results.json
-
+# python scripts/evaluate_result.py --input_path output/llama3/rct_dev.jsonl --output_path output/llama3/rct_dev_results.json
+# python scripts/evaluate_result.py --input_path output/llama3/non_rct_dev.jsonl --output_path output/llama3/non_rct_dev_results.json
+# python scripts/evaluate_result.py --input_path output/qwen3/non_rct_dev.jsonl --output_path output/qwen3/non_rct_dev_results.json
+# python scripts/evaluate_result.py --input_path output/qwen3/rct_dev.jsonl --output_path output/qwen3/rct_dev_results.json
 import evaluate
 import argparse
 import os

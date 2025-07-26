@@ -8,11 +8,15 @@ from datasets import load_dataset
 # Filter the dataset
 # Supported datasets:
 # - pubmed_rct
-# - python scripts/filter.py data/pubmed_rct/dev.jsonl data/rct_filtered
+# - python scripts/filter.py data/processed/rct/dev.jsonl data/filtered/rct
+# - python scripts/filter.py data/processed/rct/test.jsonl data/filtered/rct
+# - python scripts/filter.py data/processed/rct/train.jsonl data/filtered/rct
 
 # - pubmed_non_rct
-# - python scripts/filter.py data/pubmed_non_rct/dev_clean.jsonl data/non_rct_filtered
-# - python scripts/filter.py data/pubmed_non_rct/examples.jsonl data/non_rct_filtered
+# - python scripts/filter.py data/processed/non_rct/dev_clean.jsonl data/filtered/non_rct
+# - python scripts/filter.py data/processed/non_rct/test_clean.jsonl data/filtered/non_rct
+# - python scripts/filter.py data/processed/non_rct/train_clean.jsonl data/filtered/non_rct
+# - python scripts/filter.py data/processed/non_rct/examples.jsonl data/filtered/non_rct
 ###################################################################
 
 def loading_data(path: str):
@@ -91,7 +95,7 @@ if __name__ == "__main__":
     print("Save the filtered items to the output file")
     
     os.makedirs(args.Output_folder, exist_ok=True)
-    output_file_path = os.path.join(args.Output_folder, f"{file_name}_filtered.jsonl")
+    output_file_path = os.path.join(args.Output_folder, f"{file_name}.jsonl")
     with open(output_file_path, 'w') as f:
         for item in filtered_items:
             f.write(json.dumps(item) + '\n')

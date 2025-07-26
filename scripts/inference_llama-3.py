@@ -1,7 +1,6 @@
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference.py --model_name llama-3 --data_path data/non_rct_formatted/examples_filtered_sharegpt.jsonl --output_path output/sharegpt_test.jsonl
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference.py --model_name llama-3 --data_path data/rct_formatted/dev_filtered_sharegpt.jsonl --output_path output/rct_dev.jsonl
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference.py --model_name llama-3 --data_path data/non_rct_formatted/dev_clean_filtered_sharegpt.jsonl --output_path output/non_rct_dev.jsonl
-# Only support sharegpt style for now
+# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/non_rct/examples.jsonl --output_path output/llama3/non_rct_examples.jsonl
+# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/rct/dev.jsonl --output_path output/llama3/rct_dev.jsonl
+# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/non_rct/dev.jsonl --output_path output/llama3/non_rct_dev.jsonl
 
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
@@ -12,7 +11,6 @@ import os
 max_seq_length = 2048 # Choose any! We auto support RoPE Scaling internally!
 dtype = None # None for auto detection. Float16 for Tesla T4, V100, Bfloat16 for Ampere+
 load_in_4bit = True # Use 4bit quantization to reduce memory usage. Can be False.
-prompt_postfix = "Make a scientific conclusion based on the given text above:"
 TEST_NUM = 1000
 
 # 4bit pre quantized models we support for 4x faster downloading + no OOMs.
@@ -87,11 +85,7 @@ if __name__ == "__main__":
         for line in fin:
             item = json.loads(line)
             input_text = item['conversations'][0]['value']
-            output_text = item['conversations'][1]['value']
-
-            # add prompt postfix
-            input_text = input_text + '\n\n' + prompt_postfix
-
+            reference_text = item['conversations'][1]['value']
             messages = [
                 {"from": "human",
                 "value": input_text},
@@ -117,7 +111,7 @@ if __name__ == "__main__":
                 'input': input_text,
                 'output': gen_str,
                 'output_with_context': answer_str,
-                'answer': output_text,
+                'answer': reference_text,
             }
             fout.write(json.dumps(return_item) + '\n')
 
@@ -129,5 +123,5 @@ if __name__ == "__main__":
                 print(f"The answer of the {count}th item is:")
                 print(gen_str)
                 print(f"The ground truth of the {count}th item is:")
-                print(output_text)
+                print(reference_text)
                 print("------------------------------------------------------------------------------------------------")

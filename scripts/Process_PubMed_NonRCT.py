@@ -1,10 +1,14 @@
-# python scripts/Process_PubMed_NonRCT.py ./data/pubmed_non_rct examples.txt
+# python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct examples.txt
+# python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct train_clean.txt
+# python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct dev_clean.txt
+# python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct test_clean.txt
+
 import argparse
 import os
 import re
 import json
 
-data_dir = "/data/raw/abstractAnalysis/PubMedData/output"
+data_dir = "./data/raw/abstractAnalysis/PubMedData/output"
 
 def process_pubmed_non_rct(output_folder: str, file_name: str):
     """

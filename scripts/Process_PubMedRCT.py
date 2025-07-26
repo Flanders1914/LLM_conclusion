@@ -1,10 +1,13 @@
-# python scripts/Process_PubMedRCT.py ./data/pubmed_rct dev.txt
+# python scripts/Process_PubMedRCT.py ./data/processed/rct dev.txt
+# python scripts/Process_PubMedRCT.py ./data/processed/rct test.txt
+# python scripts/Process_PubMedRCT.py ./data/processed/rct train.txt
+
 import argparse
 import os
 import re
 import json
 
-data_dir = "data/raw/pubmed-rct/PubMed_20k_RCT"
+data_dir = "./data/raw/pubmed-rct/PubMed_20k_RCT"
 
 def process_pubmed_rct(output_folder: str, file_name: str):
     """

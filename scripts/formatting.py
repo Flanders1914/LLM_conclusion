@@ -1,6 +1,12 @@
-# python scripts/formatting.py data/rct_filtered/dev_filtered.jsonl data/rct_formatted --format sharegpt
-# python scripts/formatting.py data/non_rct_filtered/dev_clean_filtered.jsonl data/non_rct_formatted --format sharegpt
-# python scripts/formatting.py data/non_rct_filtered/examples_filtered.jsonl data/non_rct_formatted --format sharegpt
+# python scripts/formatting.py data/filtered/rct/dev.jsonl data/formatted_sharegpt/rct/dev.jsonl --format sharegpt
+# python scripts/formatting.py data/filtered/rct/test.jsonl data/formatted_sharegpt/rct/test.jsonl --format sharegpt
+# python scripts/formatting.py data/filtered/rct/train.jsonl data/formatted_sharegpt/rct/train.jsonl --format sharegpt
+
+# python scripts/formatting.py data/filtered/non_rct/dev_clean.jsonl data/formatted_sharegpt/non_rct/dev.jsonl --format sharegpt
+# python scripts/formatting.py data/filtered/non_rct/test_clean.jsonl data/formatted_sharegpt/non_rct/test.jsonl --format sharegpt
+# python scripts/formatting.py data/filtered/non_rct/train_clean.jsonl data/formatted_sharegpt/non_rct/train.jsonl --format sharegpt
+# python scripts/formatting.py data/filtered/non_rct/examples.jsonl data/formatted_sharegpt/non_rct/examples.jsonl --format sharegpt
+
 import json
 import argparse
 import os
@@ -50,9 +56,14 @@ def format_alpaca(data_path: str, output_path: str):
                     output_text += sentence['text'] + ' '
             if len(input_text) > 0 and len(output_text) > 0:
                 output_item = {
-                    'instruction': instruction,
-                    'input': input_text.strip(),
-                    'output': output_text.strip()
+                    'id': item['id'],
+                    'title': item['title'],
+                    'sentences': item['sentences'],
+                    'alpaca_format': {
+                                'instruction': instruction,
+                                'input': input_text.strip(),
+                                'output': output_text.strip()
+                            }
                 }
                 fout.write(json.dumps(output_item) + '\n')
 
@@ -66,6 +77,7 @@ def format_sharegpt(data_path: str, output_path: str):
             sentences = item.get('sentences', [])
             user_value = ""
             gpt_value = ""
+            prompt_postfix = "Make a scientific conclusion based on the given text above:"
             for sentence in sentences:
                 if sentence['label'] != 'CONCLUSIONS':
                     user_value += sentence['text'] + ' '
@@ -73,8 +85,11 @@ def format_sharegpt(data_path: str, output_path: str):
                     gpt_value += sentence['text'] + ' '
             if len(user_value) > 0 and len(gpt_value) > 0:
                 output_item = {
+                    'id': item['id'],
+                    'title': item['title'],
+                    'sentences': item['sentences'],
                     'conversations': [
-                        {'from': 'human', 'value': user_value.strip()},
+                        {'from': 'human', 'value': user_value.strip() + '\n\n' + prompt_postfix},
                         {'from': 'gpt', 'value': gpt_value.strip()}
                     ]
                 }
@@ -91,9 +106,9 @@ if __name__ == '__main__':
         help="Path to the input file to process"
     )
     parser.add_argument(
-        "output_folder", 
+        "output_file", 
         type=str,
-        help="Path to the folder where formatted data should be saved"
+        help="Path to the file where formatted data should be saved"
     )
     parser.add_argument(
         "--format",
@@ -106,20 +121,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Create output directory if it doesn't exist
-    os.makedirs(args.output_folder, exist_ok=True)
-    # extract the file name
-    file_name = os.path.basename(args.input_file)
-    file_name = file_name.split(".")[0]
+    os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
 
     # Format data based on specified format
     if args.format == "alpaca":
-        output_file = os.path.join(args.output_folder, f"{file_name}_alpaca.jsonl")
-        format_alpaca(args.input_file, output_file)
+        format_alpaca(args.input_file, args.output_file)
     elif args.format == "sharegpt":
-        output_file = os.path.join(args.output_folder, f"{file_name}_sharegpt.jsonl")
-        format_sharegpt(args.input_file, output_file)
+        format_sharegpt(args.input_file, args.output_file)
     else:
         raise ValueError(f"Invalid format: {args.format}")
 
     print(f"Successfully formatted items into {args.format} format")
-    print(f"Output written to: {output_file}")
+    print(f"Output written to: {args.output_file}")
