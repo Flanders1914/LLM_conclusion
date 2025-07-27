@@ -61,7 +61,7 @@ The git repo of PubMed non-RCT is https://github.com/soumyaxyz/abstractAnalysis/
 
 ## Usage
 
-### 1. Downloading raw data from github
+### Downloading raw data from github
 The raw data is on Github.
 
 ```bash
@@ -72,26 +72,56 @@ git clone https://github.com/Franck-Dernoncourt/pubmed-rct.git
 git clone https://github.com/soumyaxyz/abstractAnalysis.git
 ```
 
-### 2. Data Processing
+### Run the data processing pipeline
+
+```bash
+./run_data_processing.sh
+```
+
+This pipeline includes the following steps:
+
+#### 1. Data Processing
 This step processes the raw .txt files from both PubMed RCT and non-RCT datasets, extracting the structured data and converting it into JSONL format.
 
-### 3. Data Filtering
+#### 2. Data Filtering
 This step filters the processed datasets to ensure quality and consistency. The filtering criteria include:
 - Must have METHODS and RESULTS labeled sentences
 - Must have at least 1 CONCLUSIONS labeled sentence
 - CONCLUSIONS labeled sentences must be the last sentences of the item
 - The number of CONCLUSIONS labeled sentences must be smaller than the number of METHODS and RESULTS labeled sentences combined
 
-### 4. Data Formatting
+#### 3. Data Formatting
 This step converts the filtered data into Alpaca or ShareGPT formats and adds prompts.
 
-### 5. SFT (Supervised Fine-Tuning)
+###  SFT (Supervised Fine-Tuning)
 This step performs supervised fine-tuning on pre-trained language models using the formatted data. The script uses Unsloth for efficient training with LoRA.
 
-### 6. Reference (Inference)
+First combine the data of RCT and Non-RCT to form an unified training dataset
+
+```bash
+   python scripts/combine_training_data.py
+```
+
+Then run the script for SFT using the combined dataset, here is an example:
+
+```
+CUDA_VISIBLE_DEVICES=1 python scripts/sft.py \
+    --data_path data/combined_train.jsonl \
+    --data_size 4000 \
+    --data_format sharegpt \
+    --model unsloth/llama-3-8b-Instruct-bnb-4bit \
+    --max_seq_length 2048 \
+    --load_in_4bit \
+    --lr 2e-4 \
+    --batch_size 2 \
+    --num_epoch 3 \
+    --output_path output/models/llama3-8b-4bit
+```
+
+### Reference (Inference)
 This step performs inference using the fine-tuned models to generate conclusions from research abstracts.
 
-### 7. Evaluate
+### Evaluate
 This step evaluates the generated conclusions using multiple metrics including ROUGE, BLEU, and METEOR scores.
 
 **Evaluation metrics**:

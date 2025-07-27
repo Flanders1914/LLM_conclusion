@@ -1,6 +1,8 @@
 import os
 import math
 import argparse
+import sys
+
 
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
@@ -22,8 +24,7 @@ def get_argument():
     parser.add_argument('--seed', default=3407, type=int, help='random seed for the model')
     parser.add_argument('--model', required=True, type=str, help='model to finetune')
     parser.add_argument('--max_seq_length', default=2048, type=int)
-    parser.add_argument('--dtype', default=None, type=str, help='None for auto detection.')
-    parser.add_argument('--load_in_4bit', default=False, type=bool, help='Use 4bit quantization to reduce memory usage.')
+    parser.add_argument('--load_in_4bit', action='store_true', help='Use 4bit quantization to reduce memory usage.')
 
     # training
     parser.add_argument('--lr', default=2e-4, type=float, help='learning rate')
@@ -42,7 +43,9 @@ if __name__ == '__main__':
     args = get_argument()
 
     # create output path if not exists
-    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
+    parent = os.path.dirname(args.output_path)
+    if not os.path.exists(parent):
+        os.makedirs(parent)
 
     # if 4bit model, set load_in_4bit to True
     if '4bit' in args.model:
@@ -50,12 +53,19 @@ if __name__ == '__main__':
     else:
         args.load_in_4bit = False
 
+
+
+    # get device
+    device = torch.cuda.current_device()
+    print(f"Using device: {device}")
+
     # load model
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=args.model,  # Choose ANY!
         max_seq_length=args.max_seq_length,
-        dtype=args.dtype,
+        dtype=None,
         load_in_4bit=args.load_in_4bit,
+        device_map = {"": device}
         # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
     )
 
@@ -68,7 +78,7 @@ if __name__ == '__main__':
         lora_dropout=0,  # Supports any, but = 0 is optimized
         bias="none",  # Supports any, but = "none" is optimized
         # [NEW] "unsloth" uses 30% less VRAM, fits 2x larger batch sizes!
-        use_gradient_checkpointing="unsloth",  # True or "unsloth" for very long context
+        use_gradient_checkpointing=True,  # True or "unsloth" for very long context
         random_state=args.seed,
         use_rslora=False,  # We support rank stabilized LoRA
         loftq_config=None,  # And LoftQ
@@ -78,6 +88,7 @@ if __name__ == '__main__':
     dataset = load_dataset("json", data_files=args.data_path)["train"]
     if args.data_size < len(dataset):
         dataset = dataset.select(range(args.data_size))
+    dataset = dataset.select_columns(["conversations"])
     print(f"Dataset size for training is: {len(dataset)}")
 
     if args.data_format == 'sharegpt':
@@ -90,7 +101,7 @@ if __name__ == '__main__':
         else:
             # TODO: support qwen and other models
             print("Only support llama model for now!")
-            exit()
+            sys.exit(1)
         # formatting function
         def formatting_sharegpt_prompts_func(examples):
             convos = examples["conversations"]
@@ -104,7 +115,7 @@ if __name__ == '__main__':
         print("-" * 100)
     else:
         print("Only support sharegpt format for now!")
-        exit()
+        sys.exit(1)
 
     # create trainer
     total_steps = args.num_epoch * math.ceil(len(dataset) / args.batch_size)
@@ -121,6 +132,7 @@ if __name__ == '__main__':
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
             max_steps = total_steps,
+            save_steps=1000,
             learning_rate = args.lr,
             fp16 = not is_bfloat16_supported(),
             bf16 = is_bfloat16_supported(),
@@ -128,6 +140,7 @@ if __name__ == '__main__':
             optim = "adamw_8bit",
             weight_decay = 0.01,
             lr_scheduler_type = "linear",
+            report_to = "none",
             seed = args.seed,
             output_dir=os.path.join(args.output_path, 'checkpoints'),
         ),
