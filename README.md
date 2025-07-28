@@ -104,22 +104,43 @@ First combine the data of RCT and Non-RCT to form an unified training dataset
 
 Then run the script for SFT using the combined dataset, here is an example:
 
-```
+```bash
 CUDA_VISIBLE_DEVICES=1 python scripts/sft.py \
     --data_path data/combined_train.jsonl \
-    --data_size 4000 \
+    --data_size 10000 \
+    --seed 3407 \
     --data_format sharegpt \
     --model unsloth/llama-3-8b-Instruct-bnb-4bit \
     --max_seq_length 2048 \
     --load_in_4bit \
-    --lr 2e-4 \
-    --batch_size 2 \
+    --lr 1e-4 \
+    --batch_size 16 \
     --num_epoch 3 \
+    --max_eval_samples 100 \
+    --eval_steps 500 \
     --output_path output/models/llama3-8b-4bit
 ```
 
 ### Reference (Inference)
 This step performs inference using the fine-tuned models to generate conclusions from research abstracts.
+```bash
+CUDA_VISIBLE_DEVICES=1 python scripts/sft_inference.py \
+    --saved_path output/models/llama3-8b-4bit/lora_model \
+    --data_path data/formatted_sharegpt/non_rct/dev.jsonl \
+    --output_path output/predictions/llama3-8b-4bit/non_rct_pred.jsonl \
+    --is_4bit
+
+```
+```bash
+CUDA_VISIBLE_DEVICES=1 python scripts/sft_inference.py \
+    --saved_path output/models/llama3-8b-4bit/lora_model \
+    --data_path data/formatted_sharegpt/rct/dev.jsonl \
+    --output_path output/predictions/llama3-8b-4bit/rct_pred.jsonl \
+    --is_4bit
+
+```
+
+
 
 ### Evaluate
 This step evaluates the generated conclusions using multiple metrics including ROUGE, BLEU, and METEOR scores.
@@ -129,3 +150,14 @@ This step evaluates the generated conclusions using multiple metrics including R
 - **BLEU**: Measures precision of n-gram matches
 - **METEOR**: Combines exact, stem, synonym, and paraphrase matches
 - **Word count analysis**: Compares average word count of predictions vs references
+
+```bash
+
+python scripts/evaluate_result.py \
+    --input_path output/predictions/llama3-8b-4bit/non_rct_pred.jsonl \
+    --output_path output/predictions/llama3-8b-4bit/non_rct_result.json
+
+python scripts/evaluate_result.py \
+    --input_path output/predictions/llama3-8b-4bit/rct_pred.jsonl \
+    --output_path output/predictions/llama3-8b-4bit/rct_result.json
+```

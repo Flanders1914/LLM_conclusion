@@ -27,12 +27,11 @@ if __name__ == "__main__":
         "--output_path",
         type=str,
         required=True,
-        help="The path to the output to use"
+        help="The path to the output file"
     )
     parser.add_argument(
         "--is_4bit",
-        type=bool,
-        required=True,
+        action='store_true',
         help="Whether the model is 4bit"
     )
 
