@@ -5,7 +5,6 @@ import json
 import os
 
 max_seq_length = 2048 # Choose any! We auto support RoPE Scaling internally!
-TEST_NUM = 1000
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -33,6 +32,12 @@ if __name__ == "__main__":
         "--is_4bit",
         action='store_true',
         help="Whether the model is 4bit"
+    )
+    parser.add_argument(
+        "--test_num",
+        type=int,
+        default=1000,
+        help="The number of test items"
     )
 
     args = parser.parse_args()
@@ -102,10 +107,10 @@ if __name__ == "__main__":
             fout.write(json.dumps(return_item) + '\n')
 
             count += 1
-            if count >= TEST_NUM:
+            if count >= args.test_num:
                 break
             elif count % 10 == 0:
-                print(f"The {count}/{TEST_NUM} items are processed")
+                print(f"The {count}/{args.test_num} items are processed")
                 print(f"The answer of the {count}th item is:")
                 print(gen_str)
                 print(f"The ground truth of the {count}th item is:")

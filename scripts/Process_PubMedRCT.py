@@ -7,7 +7,7 @@ import os
 import re
 import json
 
-data_dir = "./data/raw/pubmed-rct/PubMed_20k_RCT"
+data_dir = "./data/raw/pubmed-rct/PubMed_200k_RCT"
 
 def process_pubmed_rct(output_folder: str, file_name: str):
     """

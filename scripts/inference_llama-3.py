@@ -1,7 +1,3 @@
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/non_rct/examples.jsonl --output_path output/llama3/non_rct_examples.jsonl
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/rct/dev.jsonl --output_path output/llama3/rct_dev.jsonl
-# CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py --model_name llama-3 --data_path data/formatted_sharegpt/non_rct/dev.jsonl --output_path output/llama3/non_rct_dev.jsonl
-
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
 import argparse
@@ -9,9 +5,8 @@ import json
 import os
 
 max_seq_length = 2048 # Choose any! We auto support RoPE Scaling internally!
-dtype = None # None for auto detection. Float16 for Tesla T4, V100, Bfloat16 for Ampere+
-load_in_4bit = True # Use 4bit quantization to reduce memory usage. Can be False.
-TEST_NUM = 1000
+dtype = None
+load_in_4bit = False
 
 # 4bit pre quantized models we support for 4x faster downloading + no OOMs.
 fourbit_models = [
@@ -45,12 +40,19 @@ if __name__ == "__main__":
         type=str,
         help="The path to the output to use"
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--test_num",
+        type=int,
+        default=2000,
+        help="The number of items to test"
+    )
+    parser.add_argument(
+        "--print_every_10_items",
+        action="store_true",
+        help="Print the result every 10 items"
+    )
 
-    if args.model_name == "llama-3":
-        model_name = "unsloth/llama-3-8b-Instruct-bnb-4bit"
-    else:
-        raise ValueError(f"Invalid model name: {args.model_name}")
+    args = parser.parse_args()
 
     # create the output directory if it doesn't exist
     dirpath = os.path.dirname(args.output_path)
@@ -59,7 +61,7 @@ if __name__ == "__main__":
 
     # load the model
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name = model_name, # Choose ANY! eg teknium/OpenHermes-2.5-Mistral-7B
+        model_name = args.model_name, # Choose ANY! eg teknium/OpenHermes-2.5-Mistral-7B
         max_seq_length = max_seq_length,
         dtype = dtype,
         load_in_4bit = load_in_4bit,
@@ -78,7 +80,7 @@ if __name__ == "__main__":
 
     # Start inference
     count = 0
-    print(f"Start inference, model: {model_name}, data: {args.data_path}, output: {args.output_path}")
+    print(f"Start inference, model: {args.model_name}, data: {args.data_path}, output: {args.output_path}")
     print("------------------------------------------------------------------------------------------------")
 
     with open(args.data_path, 'r') as fin, open(args.output_path, 'w') as fout:
@@ -116,10 +118,10 @@ if __name__ == "__main__":
             fout.write(json.dumps(return_item) + '\n')
 
             count += 1
-            if count >= TEST_NUM:
+            if count >= args.test_num:
                 break
-            elif count % 10 == 0:
-                print(f"The {count}/{TEST_NUM} items are processed")
+            elif count % 10 == 0 and args.print_every_10_items:
+                print(f"The {count}/{args.test_num} items are processed")
                 print(f"The answer of the {count}th item is:")
                 print(gen_str)
                 print(f"The ground truth of the {count}th item is:")
