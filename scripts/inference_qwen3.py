@@ -11,8 +11,7 @@ import re
 
 max_seq_length = 2048 # Choose any! We auto support RoPE Scaling internally!
 dtype = None # None for auto detection. Float16 for Tesla T4, V100, Bfloat16 for Ampere+
-load_in_4bit = True # Use 4bit quantization to reduce memory usage. Can be False.
-TEST_NUM = 1000
+load_in_4bit = False # Use 4bit quantization to reduce memory usage. Can be False.
 
 fourbit_models = [
     "unsloth/Qwen3-1.7B-unsloth-bnb-4bit", # Qwen 14B 2x faster
@@ -41,12 +40,28 @@ if __name__ == "__main__":
         type=str,
         help="The path to the output to use"
     )
+    parser.add_argument(
+        "--test_num",
+        type=int,
+        default=2000,
+        help="The number of items to test"
+    )
+    parser.add_argument(
+        "--print_every_10_items",
+        action="store_true",
+        help="Print the result every 10 items"
+    )
+    parser.add_argument(
+        "--load_in_4bit",
+        action="store_true",
+        help="Use 4bit quantization to reduce memory usage"
+    )
     args = parser.parse_args()
 
-    if args.model_name == "qwen3":
-        model_name = "unsloth/Qwen3-14B-unsloth-bnb-4bit"
+    if args.load_in_4bit:
+        load_in_4bit = True
     else:
-        raise ValueError(f"Invalid model name: {args.model_name}")
+        load_in_4bit = False
 
     # create the output directory if it doesn't exist
     dirpath = os.path.dirname(args.output_path)
@@ -55,10 +70,9 @@ if __name__ == "__main__":
 
     # load the model
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name = "unsloth/Qwen3-14B",
+        model_name = args.model_name,
         max_seq_length = 2048,   # Context length - can be longer, but uses more memory
-        load_in_4bit = True,     # 4bit uses much less memory
-        load_in_8bit = False,    # A bit more accurate, uses 2x memory
+        load_in_4bit = load_in_4bit,     # 4bit uses much less memory
     )
 
     # Enable native 2x faster inference
@@ -66,7 +80,7 @@ if __name__ == "__main__":
 
     # Start inference
     count = 0
-    print(f"Start inference, model: {model_name}, data: {args.data_path}, output: {args.output_path}")
+    print(f"Start inference, model: {args.model_name}, data: {args.data_path}, output: {args.output_path}")
     print("------------------------------------------------------------------------------------------------")
 
     with open(args.data_path, 'r') as fin, open(args.output_path, 'w') as fout:
@@ -111,10 +125,10 @@ if __name__ == "__main__":
             fout.write(json.dumps(return_item) + '\n')
 
             count += 1
-            if count >= TEST_NUM:
+            if count >= args.test_num:
                 break
-            elif count % 10 == 0:
-                print(f"The {count}/{TEST_NUM} items are processed")
+            elif args.print_every_10_items and count % 10 == 0:
+                print(f"The {count}/{args.test_num} items are processed")
                 print(f"The answer of the {count}th item is:")
                 print(output_content)
                 print(f"The ground truth of the {count}th item is:")

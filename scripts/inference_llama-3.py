@@ -51,8 +51,18 @@ if __name__ == "__main__":
         action="store_true",
         help="Print the result every 10 items"
     )
+    parser.add_argument(
+        "--load_in_4bit",
+        action="store_true",
+        help="Use 4bit quantization to reduce memory usage"
+    )
 
     args = parser.parse_args()
+
+    if args.load_in_4bit:
+        load_in_4bit = True
+    else:
+        load_in_4bit = False
 
     # create the output directory if it doesn't exist
     dirpath = os.path.dirname(args.output_path)

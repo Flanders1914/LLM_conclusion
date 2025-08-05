@@ -107,9 +107,8 @@ if __name__ == '__main__':
     dataset = dataset.select_columns(["conversations"])
     print(f"The loaded dataset size is: {len(dataset)}")
 
-    # shuffle dataset
-    dataset = dataset.shuffle(seed=SHUFFLE_SEED)
-    splits = dataset.train_test_split(train_size=TRAIN_EVAL_RATIO)
+    # split dataset, set seed to ensure reproducibility
+    splits = dataset.train_test_split(train_size=TRAIN_EVAL_RATIO, shuffle=True, seed=SHUFFLE_SEED)
     dataset_train = splits["train"]
     dataset_val = splits["test"]
     # check data size
@@ -129,7 +128,7 @@ if __name__ == '__main__':
 
     # formatting dataset
     if args.data_format == 'sharegpt':
-        if 'llama' in args.model:
+        if 'Llama' in args.model or 'llama' in args.model:
             tokenizer = get_chat_template(
                 tokenizer,
                 chat_template="llama-3",  # Supports zephyr, chatml, mistral, llama, alpaca, vicuna, vicuna_old, unsloth
@@ -170,6 +169,7 @@ if __name__ == '__main__':
             gradient_accumulation_steps = GRADIENT_ACCUMULATION_STEPS,
             warmup_steps = WARMUP_STEPS,
             num_train_epochs = args.num_epoch,
+            eval_strategy = "steps",
             eval_steps = args.eval_steps,
             save_steps=SAVE_STEPS,
             learning_rate = args.lr,

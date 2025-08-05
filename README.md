@@ -170,7 +170,7 @@ For inference on RCT dataset:
 CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
     --model_name unsloth/Meta-Llama-3.1-8B-Instruct \
     --data_path data/formatted_sharegpt/rct/test.jsonl \
-    --output_path output/predictions/llama3_8b_base/rct.jsonl \
+    --output_path output/predictions/llama3_8b_base/rct_prompt3.jsonl \
     --test_num 2000 \
     --print_every_10_items
 ```
@@ -180,7 +180,7 @@ For inference on Non-RCT dataset:
 CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
     --model_name unsloth/Meta-Llama-3.1-8B-Instruct \
     --data_path data/formatted_sharegpt/non_rct/test.jsonl \
-    --output_path output/predictions/llama3_8b_base/non_rct.jsonl \
+    --output_path output/predictions/llama3_8b_base/non_rct_prompt3.jsonl \
     --test_num 2000 \
     --print_every_10_items
 ```
@@ -188,12 +188,14 @@ CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
 #### Step 3: Evaluate the Results
 ```bash
 python scripts/evaluate_result.py \
-    --input_path output/predictions/llama3_8b_base/non_rct.jsonl \
-    --output_path output/predictions/llama3_8b_base/non_rct_result.json
+    --input_path output/predictions/llama3_8b_base/non_rct_prompt0.jsonl \
+    --output_path output/predictions/llama3_8b_base/non_rct_prompt0_result.json \
+    --top_n 10
 
 python scripts/evaluate_result.py \
-    --input_path output/predictions/llama3_8b_base/rct.jsonl \
-    --output_path output/predictions/llama3_8b_base/rct_result.json
+    --input_path output/predictions/llama3_8b_base/rct_prompt0.jsonl \
+    --output_path output/predictions/llama3_8b_base/rct_prompt0_result.json \
+    --top_n 10
 ```
 
 #### Step 4: Repeat Steps 1-3 for Other Prompts
@@ -207,13 +209,15 @@ To format the input with other prompts indexed by i (where i ∈ [0, 1, 2, 3]):
 The SFT experiment is conducted on RCT and non-RCT datasets separately.
 The base model is `unsloth/Meta-Llama-3.1-8B-Instruct`.
 We fine-tune this model on the train split.
-For RCT, our experiment will choose different data sizes (5,000, 10,000, 50,000, 100,000) to show how the results behave as the training data scales.
+For RCT, our experiment will choose different data sizes (10,000, 50,000, 100,000) to show how the results behave as the training data scales.
 
 Here is an SFT example:
 ```bash
-CUDA_VISIBLE_DEVICES=1 python scripts/sft.py \
+./run_data_processing.sh --formatting-only -p 1
+
+CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --data_path ./data/formatted_sharegpt/rct/train.jsonl \
-    --data_size 5000 \
+    --data_size 10000 \
     --seed 3407 \
     --data_format sharegpt \
     --model unsloth/Meta-Llama-3.1-8B-Instruct \
@@ -223,18 +227,19 @@ CUDA_VISIBLE_DEVICES=1 python scripts/sft.py \
     --num_epoch 3 \
     --max_eval_samples 100 \
     --eval_steps 500 \
-    --output_path output/models/llama3-8b-rct5000
+    --output_path output/models/prompt1/llama3-8b-rct10k
 ```
 
 After fine-tuning the model, perform inference and evaluate the results:
 ```bash
 CUDA_VISIBLE_DEVICES=1 python scripts/sft_inference.py \
-    --saved_path output/models/llama3-8b-rct5000/lora_model \
+    --saved_path output/models/prompt1/llama3-8b-rct10k/lora_model \
     --data_path data/formatted_sharegpt/rct/test.jsonl \
-    --output_path output/predictions/llama3-8b-rct5000/rct.jsonl \
+    --output_path output/predictions/llama3-8b-rct10k/prompt1/rct.jsonl \
     --test_num 2000
 
 python scripts/evaluate_result.py \
-    --input_path output/predictions/llama3-8b-rct5000/rct.jsonl \
-    --output_path output/predictions/llama3-8b-rct5000/rct_result.json
+    --input_path output/predictions/llama3-8b-rct10k/prompt1/rct.jsonl \
+    --output_path output/predictions/llama3-8b-rct10k/prompt1/rct_result.json \
+    --top_n 10
 ```
