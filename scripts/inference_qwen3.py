@@ -100,8 +100,13 @@ if __name__ == "__main__":
                 enable_thinking = False, # Disable thinking
             )
             model_inputs = tokenizer(text, return_tensors = "pt").to("cuda")
-            generated_ids = model.generate(**model_inputs, max_new_tokens=1024,
-                                            temperature = 0.7, top_p = 0.8, top_k = 20) # For non thinking
+            generated_ids = model.generate(
+                **model_inputs,
+                max_new_tokens=1024,
+                temperature=0.7,
+                top_p=0.8,
+                top_k=20
+            )  # For non thinking
             # get the string
             generated_str = tokenizer.decode(generated_ids[0], skip_special_tokens=True, clean_up_tokenization_spaces=True)
 
@@ -111,15 +116,17 @@ if __name__ == "__main__":
             if match:
                 thinking_content = match.group(1).strip()
                 output_content = match.group(2).strip()
+                output_with_context = input_text + "\n\n" + thinking_content + "\n\n" + output_content
             else:
-                print("Regex failed")
-                continue
+                # If model does not emit thinking tags, use the whole decoded string as output
+                output_content = generated_str.strip()
+                output_with_context = output_content
 
             # write the response to the output file
             return_item = {
                 'input': input_text,
                 'output': output_content,
-                'output_with_context': input_text + "\n\n" + thinking_content + "\n\n" + output_content,
+                'output_with_context': output_with_context,
                 'answer': reference_text,
             }
             fout.write(json.dumps(return_item) + '\n')

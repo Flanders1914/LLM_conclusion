@@ -89,8 +89,11 @@ if __name__ == "__main__":
     ds = loading_data(args.Input_file_path)
     filtered_items = filter_items(ds)
     print(f"The number of filtered items is {len(filtered_items)}")
-    print(f"The first filtered item is {filtered_items[0]}")
-    print(f"The last filtered item is {filtered_items[-1]}")
+    if len(filtered_items) > 0:
+        print(f"The first filtered item is {filtered_items[0]}")
+        print(f"The last filtered item is {filtered_items[-1]}")
+    else:
+        print("No items passed the filtering criteria.")
     print("--------------------------------")
     print("Save the filtered items to the output file")
     
