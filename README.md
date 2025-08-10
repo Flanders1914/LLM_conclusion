@@ -298,8 +298,8 @@ python plot/plot_baseline.py \
 - `evaluate.sh` expects predictions under `output/predictions/{MODEL}/prompt{i}/{split}.jsonl`.
 
 ### TODO
-- [ ] Finetune Llama3.2-3B with 50k RCT data (Prompt 1)
-- [ ] Test the Llama3.2-3B RCT-50k fine-tuned model on the RCT test split
+- [x] Finetune Llama3.2-3B with 50k RCT data (Prompt 1)
+- [x] Test the Llama3.2-3B RCT-50k fine-tuned model on the RCT test split
 - [ ] Scale up finetuning experiments to 100k RCT samples
 - [ ] Run finetuning experiments using Prompt 3
 - [ ] Integrate Non-PubMed datasets into the finetuning and evaluation pipeline
