@@ -5,7 +5,7 @@
 # MODEL="llama3.1-8b-rct50k"
 # MODEL="llama3.2-3b-base"
 # MODEL="llama3.2-3b-rct10k"
-  MODEL="llama3.2-3b-rct50k"
+ MODEL="llama3.2-3b-rct50k"
 
 PRED_DIR="output/predictions/${MODEL}"
 EVAL_DIR="output/eval_results/${MODEL}"

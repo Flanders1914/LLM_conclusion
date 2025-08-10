@@ -161,7 +161,7 @@ Each data entry follows this JSON format:
 
 ### Non-Fine-tuning Baseline
 
-For baseline experiments without fine-tuning, we test **Llama-3.1-8B-Instruct** and **Llama-3.2-3B-Instruct**'s performance using all 4 prompt types:
+For baseline experiments without fine-tuning, we test **Llama3.1-8B-Instruct** and **Llama3.2-3B-Instruct**'s performance using all 4 prompt types:
 
 - **Prompt 0**: "Given the above text, please write a conclusion section. The conclusion section is:"
 - **Prompt 1**: "Given the above text, please write a conclusion section in the format of PubMed paper abstract. The conclusion section is:"
@@ -176,10 +176,10 @@ We use the first 2,000 data entries of the test split in both RCT and non-RCT da
 ```
 
 #### Step 2: Running inference_llama-3.py
-For inference on RCT dataset(using Llama-3.2-3B-Instruct):
+For inference on RCT dataset(using Llama3.2-3B-Instruct):
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
-    --model_name  unsloth/Llama-3.2-3B-Instruct \
+    --model_name  unsloth/Llama3.2-3B-Instruct \
     --data_path data/formatted_sharegpt/rct/test.jsonl \
     --output_path output/predictions/llama3.2-3b-base/prompt0/rct.jsonl \
     --test_num 2000 \
@@ -189,7 +189,7 @@ CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
 For inference on Non-RCT dataset(using Llama-3.2-3B-Instruct):
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
-  --model_name unsloth/Llama-3.2-3B-Instruct \
+  --model_name unsloth/Llama3.2-3B-Instruct \
   --data_path data/formatted_sharegpt/non_rct/test.jsonl \
   --output_path output/predictions/llama3.2-3b-base/prompt0/non_rct.jsonl \
   --test_num 2000 \
@@ -233,15 +233,15 @@ CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --num_epoch 1 \
     --max_eval_samples 100 \
     --eval_steps 400 \
-    --output_path output/models/prompt1/llama-3.2-3b-rct50k
+    --output_path output/models/prompt1/llama3.2-3b-rct50k
 ```
 
 After fine-tuning the model, perform inference and evaluate the results:
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/sft_inference.py \
-    --saved_path output/models/prompt1/llama-3.2-3b-rct10k/lora_model \
+    --saved_path output/models/prompt1/llama-3.2-3b-rct50k/lora_model \
     --data_path data/formatted_sharegpt/non_rct/test.jsonl \
-    --output_path output/predictions/llama-3.2-3b-rct10k/prompt1/non_rct.jsonl \
+    --output_path output/predictions/llama-3.2-3b-rct50k/prompt1/non_rct.jsonl \
     --test_num 2000
 
 ```
@@ -261,20 +261,20 @@ python plot/plot_distribution.py \
     output/eval_results/llama3.1-8b-rct10k/prompt1/rct_results.jsonl \
     output/eval_results/llama3.1-8b-rct50k/prompt1/rct_results.jsonl \
   --labels "llama3.1-8b" "llama3.1-8b-rct10k" "llama3.1-8b-rct50k" \
-  --output_dir output/figures/compare_3.1/prompt1-rct-rougeL \
-  --plot_metric rougeL \
+  --output_dir output/figures/compare_3.1/prompt1-rct-meteor \
+  --plot_metric meteor \
   --bin_size 50
 ```
 
 ```bash
-  python plot/plot_distribution.py \
+python plot/plot_distribution.py \
   --input_paths \
     output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
     output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
     output/eval_results/llama3.2-3b-rct50k/prompt1/rct_results.jsonl \
   --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
-  --output_dir output/figures/compare_3.1/prompt1-rct-rougeL \    
-  --plot_metric rougeL \
+  --output_dir output/figures/compare_3.2/prompt1-rct-meteor \
+  --plot_metric meteor \
   --bin_size 50
 ```
 
@@ -298,8 +298,8 @@ python plot/plot_baseline.py \
 - `evaluate.sh` expects predictions under `output/predictions/{MODEL}/prompt{i}/{split}.jsonl`.
 
 ### TODO
-- [ ] Finetune Llama-3.2-3B with 50k RCT data (Prompt 1)
-- [ ] Test the Llama-3.2-3B RCT-50k fine-tuned model on the RCT test split
+- [ ] Finetune Llama3.2-3B with 50k RCT data (Prompt 1)
+- [ ] Test the Llama3.2-3B RCT-50k fine-tuned model on the RCT test split
 - [ ] Scale up finetuning experiments to 100k RCT samples
 - [ ] Run finetuning experiments using Prompt 3
 - [ ] Integrate Non-PubMed datasets into the finetuning and evaluation pipeline
