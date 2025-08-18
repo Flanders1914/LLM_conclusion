@@ -28,6 +28,7 @@ LLM_conclusion/
 │   ├── inference_llama-3.py        # Llama-3 specific inference
 │   ├── inference_qwen3.py          # Qwen3 specific inference
 │   ├── evaluate_result.py          # Metrics calculation (ROUGE/BLEU/METEOR/word counts)
+│   ├── evaluate_with_CLAIR.py      # Semantic similarity evaluation using ChatGPT/GPT models
 │   ├── select_top_results.py       # Extract top/bottom examples by metric
 │   ├── formatting.py               # Data formatting utilities
 │   ├── filter.py                   # Data filtering utilities
@@ -37,11 +38,13 @@ LLM_conclusion/
 │   └── counting_item_num.py        # Data counting utilities
 ├── plot/                           # Plotting utilities
 │   ├── plot_distribution.py        # Histograms for a metric distribution
+│   ├── plot_accumulative.py        # Cumulative distribution curves for metrics
 │   └── plot_baseline.py            # Bar charts and comprehensive results table
 ├── output/                         # Model outputs and results
 │   ├── models/                     # Fine-tuned model checkpoints
 │   ├── predictions/                # output/predictions/{MODEL}/prompt{i}/{rct|non_rct}.jsonl
 │   ├── eval_results/               # output/eval_results/{MODEL}/prompt{i}/{split}_results.jsonl
+│   ├── LLM_evals/                  # CLAIR evaluation results using ChatGPT/GPT models
 │   └── figures/                    # Saved figures and tables
 ├── evaluate.sh                     # Batch evaluation helper across prompts
 ├── run_data_processing.sh          # Data processing pipeline script
@@ -65,6 +68,9 @@ The git repository of PubMed 200k RCT is: https://github.com/Franck-Dernoncourt/
 The PubMed non-RCT corpus is from the paper [**Segmenting Scientific Abstracts into Discourse Categories: A Deep Learning-Based Approach for Sparse Labeled Data**](https://dl.acm.org/doi/abs/10.1145/3383583.3398598) ([Arxiv preprint](https://arxiv.org/abs/2005.05414)), presented in JCDL 2020.
 
 The git repository of PubMed non-RCT is: https://github.com/soumyaxyz/abstractAnalysis/blob/master/README.md?plain=1
+
+### ACL-AGD
+The ACL-AGD dataset os frm the paper [**Label-Guided Scientific Abstract Generation with a Siamese Network Using Knowledge Graphs**](https://www.techscience.com/cmc/v83n3/61022)
 
 ## Usage
 
@@ -101,6 +107,17 @@ The git repository of PubMed non-RCT is: https://github.com/soumyaxyz/abstractAn
    7z x data/raw/pubmed-rct/PubMed_200k_RCT/train.7z -o./data/raw/pubmed-rct/PubMed_200k_RCT/
    ```
 
+6. **Download ACL-AGD Dataset**
+   ```bash
+   wget -c http://lepage-lab.ips.waseda.ac.jp/media/filer_public/2e/c1/2ec107ef-4223-4f12-9dc5-5099aa3f856f/acl-agd.zip
+   unzip acl-agd.zip -d acl-agd
+   cd acl-agd
+   mv test.json test.jsonl
+   mv train.json train.jsonl
+   mv validation.json validation.jsonl
+   cd ~/LLM_conclusion
+   ```
+   
 ### Running the Data Processing Pipeline
 
 ```bash
@@ -210,6 +227,26 @@ You can evaluate all prompts for a given model directory using the helper script
 ./evaluate.sh
 ```
 
+#### Step 5: LLM Evaluation
+For advanced semantic similarity evaluation using ChatGPT/GPT models, you can use the CLAIR evaluation script:
+
+```bash
+python scripts/evaluate_with_LLM.py \
+    --input output/predictions/llama3.2-3b-rct50k/prompt1/rct.jsonl \
+    --api-key ***************** \
+    --output output/LLM_evals/gpt3.5/llama3.2-3b-rct50k/prompt1/rct.jsonl \
+    --model gpt-3.5-turbo \
+    --delay 0.5
+```
+
+**CLAIR Evaluation Parameters:**
+- `--input`: Path to JSONL file with prediction results (expects 'output' and 'answer' fields)
+- `--api-key`: Your OpenAI API key (should start with 'sk-')
+- `--output`: Output JSON file path for CLAIR evaluation results
+- `--model`: OpenAI model to use (default: 'gpt-3.5-turbo', also supports 'gpt-4', etc.)
+- `--max-pairs`: Maximum number of conclusion pairs to evaluate (optional, evaluates all if not specified)
+- `--delay`: Delay between API calls in seconds (default: 1.0, adjust based on your API rate limits)
+
 ### SFT Experiment
 
 The SFT experiment is conducted on RCT and non-RCT datasets separately.
@@ -219,7 +256,7 @@ For RCT, our experiment will choose different data sizes (10,000, 50,000, 100,00
 
 Here is an SFT example:
 ```bash
-./run_data_processing.sh --formatting-only -p 1
+./run_data_processing.sh --formatting-only -p 3
 
 CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --data_path ./data/formatted_sharegpt/rct/train.jsonl \
@@ -233,17 +270,16 @@ CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --num_epoch 1 \
     --max_eval_samples 100 \
     --eval_steps 400 \
-    --output_path output/models/prompt1/llama3.2-3b-rct50k
+    --output_path output/models/prompt3/llama3.2-3b-rct50k
 ```
 
 After fine-tuning the model, perform inference and evaluate the results:
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/sft_inference.py \
-    --saved_path output/models/prompt1/llama-3.2-3b-rct50k/lora_model \
+    --saved_path output/models/prompt3/llama3.2-3b-rct10k/lora_model \
     --data_path data/formatted_sharegpt/non_rct/test.jsonl \
-    --output_path output/predictions/llama-3.2-3b-rct50k/prompt1/non_rct.jsonl \
+    --output_path output/predictions/llama3.2-3b-rct10k/prompt3/non_rct.jsonl \
     --test_num 2000
-
 ```
 
 Changing the prediction directory in evaluate.sh then:
@@ -269,13 +305,39 @@ python plot/plot_distribution.py \
 ```bash
 python plot/plot_distribution.py \
   --input_paths \
+    output/eval_results/llama3.2-3b-base/prompt3/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct10k/prompt3/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct50k/prompt3/rct_results.jsonl \
+  --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
+  --output_dir output/figures/compare_3.2/prompt3-rct-rougel \
+  --plot_metric rougeL \
+  --bin_size 50
+```
+
+Create accumulative (cumulative distribution) curves:
+
+```bash
+python plot/plot_accumulative.py \
+  --input_paths \
     output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
     output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
     output/eval_results/llama3.2-3b-rct50k/prompt1/rct_results.jsonl \
   --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
-  --output_dir output/figures/compare_3.2/prompt1-rct-meteor \
-  --plot_metric meteor \
-  --bin_size 50
+  --output_dir output/figures/compare_3.2/prompt1-rct-cdf \
+  --plot_metric word_count_prediction \
+  --num_points 1000
+```
+
+```bash
+python plot/plot_accumulative.py \
+  --input_paths \
+    output/eval_results/llama3.2-3b-base/prompt3/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct10k/prompt3/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct50k/prompt3/rct_results.jsonl \
+  --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
+  --output_dir output/figures/compare_3.2/prompt3-rct-cdf \
+  --plot_metric word_count_prediction \
+  --num_points 1000
 ```
 
 Create baseline bar charts across prompts and a comprehensive table (reads JSONL reports produced by evaluate.sh):
@@ -292,6 +354,46 @@ python plot/plot_baseline.py \
   --eval_root output/eval_results \
   --model_name llama3.2-3b-base \
   --out_dir output/figures/llama3.2-3b-base
+```
+
+### Selecting top results
+```bash
+python scripts/select_top_results.py \
+--input_path output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
+--output_path output/eval_results/llama3.2-3b-base/prompt1/rct_results_top_5_meteor.json \
+--selection_metric meteor \
+--top_n 5 \
+>> output/eval_results/llama3.2-3b-base/prompt1/rct_results_top_5_meteor.txt
+```
+```bash
+python scripts/select_top_results.py \
+--input_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
+--output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results_top_5_meteor.json \
+--selection_metric meteor \
+--top_n 5 \
+>> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results_top_5_meteor.txt
+```
+
+```bash
+python scripts/select_top_results.py \
+  --compare \
+  --file1_path output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
+  --file2_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
+  --output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_rougeL_compared_to_base.json \
+  --selection_metric rougeL \
+  --top_n 5 \
+  >> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_rougeL_compared_to_base.txt
+```
+
+```bash
+python scripts/select_top_results.py \
+  --compare \
+  --file1_path output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
+  --file2_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
+  --output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_meteor_compared_to_base.json \
+  --selection_metric meteor \
+  --top_n 5 \
+  >> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_meteor_compared_to_base.txt
 ```
 
 ### Notes and Tips

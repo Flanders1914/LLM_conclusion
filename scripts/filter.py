@@ -17,6 +17,12 @@ from datasets import load_dataset
 # - python scripts/filter.py data/processed/non_rct/test_clean.jsonl data/filtered/non_rct
 # - python scripts/filter.py data/processed/non_rct/train_clean.jsonl data/filtered/non_rct
 # - python scripts/filter.py data/processed/non_rct/examples.jsonl data/filtered/non_rct
+
+# - acl_agd
+# - python scripts/filter.py data/processed/acl-agd/train.jsonl data/filtered/acl-agd
+# - python scripts/filter.py data/processed/acl-agd/validation.jsonl data/filtered/acl-agd
+# - python scripts/filter.py data/processed/acl-agd/test.jsonl data/filtered/acl-agd
+
 ###################################################################
 
 def loading_data(path: str):
