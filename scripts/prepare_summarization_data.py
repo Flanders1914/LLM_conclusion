@@ -53,6 +53,6 @@ def prepare_data_cnn_dailymail_sharedgpt(output_dir, prompt_postfix):
             f.write(json.dumps(data_item, ensure_ascii=False) + "\n")
 
 if __name__ == "__main__":
-    output_dir = "data/formatted_sharedgpt/cnn_dailymail"
+    output_dir = "data/formatted_sharegpt/cnn_dailymail"
     prompt_postfix = "Given the above text, please write a summary in the format of CNN article highlights. The summary is:"
     prepare_data_cnn_dailymail_sharedgpt(output_dir, prompt_postfix)
