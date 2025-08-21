@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # python scripts/Process_PubMedRCT.py ./data/processed/rct dev.txt
 # python scripts/Process_PubMedRCT.py ./data/processed/rct test.txt
 # python scripts/Process_PubMedRCT.py ./data/processed/rct train.txt
@@ -22,7 +23,7 @@ def process_pubmed_rct(output_folder: str, file_name: str):
 
     print(f"[INFO] Starting parsing: {file_path}")
     item_count = 0
-    with open(file_path, "r") as f_in, open(output_path, "w") as f_out:
+    with open(file_path, "r", encoding="utf-8") as f_in, open(output_path, "w", encoding="utf-8") as f_out:
         lines = []
         for line in f_in:
             if line.startswith('###'):

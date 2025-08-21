@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # count the number of items
 # python scripts/counting_item_num.py --input_path data/formatted_sharegpt/rct/train.jsonl
 # python scripts/counting_item_num.py --input_path data/formatted_sharegpt/rct/test.jsonl
@@ -15,7 +16,7 @@ if __name__ == "__main__":
 
     item_num = 0
 
-    with open(args.input_path, "r") as f:
+    with open(args.input_path, "r", encoding="utf-8") as f:
         for line in f:
             item_num += 1
 

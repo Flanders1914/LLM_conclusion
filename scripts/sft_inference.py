@@ -1,10 +1,9 @@
+# -*- coding: utf-8 -*-
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
 import argparse
 import json
 import os
-
-max_seq_length = 2048 # Choose any! We auto support RoPE Scaling internally!
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -39,6 +38,12 @@ if __name__ == "__main__":
         default=1000,
         help="The number of test items"
     )
+    parser.add_argument(
+        "--max_seq_length",
+        type=int,
+        default=2048,
+        help="The maximum sequence length"
+    )
 
     args = parser.parse_args()
 
@@ -50,7 +55,7 @@ if __name__ == "__main__":
     # load the model
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name = args.saved_path,
-        max_seq_length = max_seq_length,
+        max_seq_length = args.max_seq_length,
         dtype = None,
         load_in_4bit = args.is_4bit,
     )
@@ -70,7 +75,7 @@ if __name__ == "__main__":
     print(f"Start inference, model: {args.saved_path}, data: {args.data_path}, output: {args.output_path}")
     print("------------------------------------------------------------------------------------------------")
 
-    with open(args.data_path, 'r') as fin, open(args.output_path, 'w') as fout:
+    with open(args.data_path, 'r', encoding='utf-8') as fin, open(args.output_path, 'w', encoding='utf-8') as fout:
         for line in fin:
             item = json.loads(line)
             input_text = item['conversations'][0]['value']
@@ -104,7 +109,7 @@ if __name__ == "__main__":
                 'output_with_context': answer_str,
                 'answer': reference_text,
             }
-            fout.write(json.dumps(return_item) + '\n')
+            fout.write(json.dumps(return_item, ensure_ascii=False) + '\n')
 
             count += 1
             if count >= args.test_num:

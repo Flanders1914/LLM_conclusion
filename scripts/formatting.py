@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # python scripts/formatting.py data/filtered/rct/dev.jsonl data/formatted_sharegpt/rct/dev.jsonl --format sharegpt --use_prompt_index 0
 # python scripts/formatting.py data/filtered/rct/test.jsonl data/formatted_sharegpt/rct/test.jsonl --format sharegpt --use_prompt_index 0
 # python scripts/formatting.py data/filtered/rct/train.jsonl data/formatted_sharegpt/rct/train.jsonl --format sharegpt --use_prompt_index 0
@@ -48,7 +49,7 @@ def format_alpaca(data_path: str, output_path: str, use_prompt_index: int):
     """
     Format the data into Alpaca format
     """
-    with open(data_path, 'r') as fin, open(output_path, 'w') as fout:
+    with open(data_path, 'r', encoding='utf-8') as fin, open(output_path, 'w', encoding='utf-8') as fout:
         for line in fin:
             item = json.loads(line)
             sentences = item.get('sentences', [])
@@ -77,13 +78,13 @@ def format_alpaca(data_path: str, output_path: str, use_prompt_index: int):
                                 'output': output_text.strip()
                             }
                 }
-                fout.write(json.dumps(output_item) + '\n')
+                fout.write(json.dumps(output_item, ensure_ascii=False) + '\n')
 
 def format_sharegpt(data_path: str, output_path: str, use_prompt_index: int):
     """
     Format the data into Sharegpt format
     """
-    with open(data_path, 'r') as fin, open(output_path, 'w') as fout:
+    with open(data_path, 'r', encoding='utf-8') as fin, open(output_path, 'w', encoding='utf-8') as fout:
         for line in fin:
             item = json.loads(line)
             sentences = item.get('sentences', [])
@@ -109,7 +110,7 @@ def format_sharegpt(data_path: str, output_path: str, use_prompt_index: int):
                         {'from': 'gpt', 'value': gpt_value.strip()}
                     ]
                 }
-                fout.write(json.dumps(output_item) + '\n')
+                fout.write(json.dumps(output_item, ensure_ascii=False) + '\n')
 
 if __name__ == '__main__': 
     # Read input file from command line argument

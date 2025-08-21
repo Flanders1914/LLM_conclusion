@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct examples.txt
 # python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct train_clean.txt
 # python scripts/Process_PubMed_NonRCT.py ./data/processed/non_rct dev_clean.txt
@@ -23,7 +24,7 @@ def process_pubmed_non_rct(output_folder: str, file_name: str):
 
     print(f"[INFO] Starting parsing: {file_path}")
     item_count = 0
-    with open(file_path, "r") as f_in, open(output_path, "w") as f_out:
+    with open(file_path, "r", encoding="utf-8") as f_in, open(output_path, "w", encoding="utf-8") as f_out:
         lines = []
         for line in f_in:
             if line.startswith('### '):

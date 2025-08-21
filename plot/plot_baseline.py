@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import os
 import json
 import argparse
@@ -29,7 +30,7 @@ def load_results(eval_root: str, model_name: str, prefix: str):
         if not os.path.exists(fn):
             print(f"[WARNING] Missing evaluation file: {fn}. Skipping.")
             continue
-        with open(fn, 'r') as f:
+        with open(fn, 'r', encoding='utf-8') as f:
             # First line contains overall metrics
             first_line = f.readline()
             if not first_line:

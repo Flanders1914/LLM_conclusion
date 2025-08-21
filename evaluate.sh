@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Set UTF-8 locale for proper character encoding
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 # MODEL="llama3.1-8b-base"
 # MODEL="llama3.1-8b-rct10k"
 # MODEL="llama3.1-8b-rct50k"

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This script is used to evaluate the results of the model's predictions
 # It evaluates the following metrics:
 # 1. ROUGE(both individual and overall)
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     individual_results = []
 
     # Read the input file, data["output"] is the prediction, data["answer"] is the reference, data["input"] is the model input/prompt
-    with open(args.input_path, "r") as f:
+    with open(args.input_path, "r", encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             data = json.loads(line)
             # get the predictions and references
@@ -144,8 +145,8 @@ if __name__ == "__main__":
     print(f"Saving the results to {args.output_path} in jsonl format")
     print("The first line is the overall results, the rest are the individual results")
     # save the results
-    with open(args.output_path, "w") as f:
-        f.write(json.dumps(result) + "\n")
+    with open(args.output_path, "w", encoding="utf-8") as f:
+        f.write(json.dumps(result, ensure_ascii=False) + "\n")
         for individual_result in individual_results:
-            f.write(json.dumps(individual_result) + "\n")
+            f.write(json.dumps(individual_result, ensure_ascii=False) + "\n")
     print("--------------------------------")

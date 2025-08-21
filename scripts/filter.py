@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import json
 import argparse
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     
     os.makedirs(args.Output_folder, exist_ok=True)
     output_file_path = os.path.join(args.Output_folder, f"{file_name}.jsonl")
-    with open(output_file_path, 'w') as f:
+    with open(output_file_path, 'w', encoding="utf-8") as f:
         for item in filtered_items:
-            f.write(json.dumps(item) + '\n')
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
     print(f"Successfully saved the filtered items to {output_file_path}")

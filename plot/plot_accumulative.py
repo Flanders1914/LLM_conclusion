@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import os
 import json
@@ -14,7 +15,7 @@ ALLOWED_METRICS = [
 
 def extract_scores_from_file(file_path: str, plot_metric: str) -> List[float]:
     scores: List[float] = []
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             if line_num == 1:
                 continue

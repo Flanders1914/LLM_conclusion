@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import requests
 import time
@@ -52,7 +53,7 @@ The output should be ONLY a JSON dict format including a key "reason" with a str
     # Manually extract score from response
     try:
         # Try to parse JSON from the message
-        score_dict = json.loads(message_content)
+        score_dict = json.loads(message_content, ensure_ascii=False)
         return score_dict
     except json.JSONDecodeError:
         # If that fails, try to find the score in the text
@@ -97,10 +98,10 @@ def main():
         "summary": {"total_score": 0, "count": 0}
     }
 
-    with open(args.input, 'r') as f:
+    with open(args.input, 'r', encoding="utf-8") as f:
         for index, line in enumerate(f, start=1):
             try:
-                data_item = json.loads(line)
+                data_item = json.loads(line, ensure_ascii=False)
             except json.JSONDecodeError as e:
                 print(f"Error parsing line {index}: {e}")
                 continue
@@ -146,8 +147,8 @@ def main():
     out_parent_dir = os.path.dirname(args.output)
     if not os.path.exists(out_parent_dir):
         os.makedirs(out_parent_dir)
-    with open(args.output, 'w') as f:
-        json.dump(results, f, indent=2)
+    with open(args.output, 'w', encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
     
     print(f"Evaluation complete. Results saved to {args.output}")
     if results["summary"]["count"] > 0:

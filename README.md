@@ -34,7 +34,6 @@ LLM_conclusion/
 │   ├── filter.py                   # Data filtering utilities
 │   ├── Process_PubMedRCT.py        # PubMed RCT data processing
 │   ├── Process_PubMed_NonRCT.py    # PubMed non-RCT data processing
-│   ├── combine_training_data.py    # Combine RCT and non-RCT training splits
 │   └── counting_item_num.py        # Data counting utilities
 ├── plot/                           # Plotting utilities
 │   ├── plot_distribution.py        # Histograms for a metric distribution
@@ -69,8 +68,9 @@ The PubMed non-RCT corpus is from the paper [**Segmenting Scientific Abstracts i
 
 The git repository of PubMed non-RCT is: https://github.com/soumyaxyz/abstractAnalysis/blob/master/README.md?plain=1
 
-### ACL-AGD
-The ACL-AGD dataset os frm the paper [**Label-Guided Scientific Abstract Generation with a Siamese Network Using Knowledge Graphs**](https://www.techscience.com/cmc/v83n3/61022)
+### CNN/DailyMail
+The CNN / DailyMail Dataset is an English-language dataset containing just over 300k unique news articles as written by journalists at CNN and the Daily Mail. The current version supports both extractive and abstractive summarization, though the original version was created for machine reading and comprehension and abstractive question answering.
+Versions 2.0.0 and 3.0.0 of the CNN / DailyMail Dataset can be used to train a model for abstractive and extractive summarization (Version 1.0.0 was developed for machine reading and comprehension and abstractive question answering).
 
 ## Usage
 
@@ -107,18 +107,17 @@ The ACL-AGD dataset os frm the paper [**Label-Guided Scientific Abstract Generat
    7z x data/raw/pubmed-rct/PubMed_200k_RCT/train.7z -o./data/raw/pubmed-rct/PubMed_200k_RCT/
    ```
 
-6. **Download ACL-AGD Dataset**
+6. **Download and Prepare CNN/Dailymail Dataset**
+  The prepare_summarization_data.py automatically prepare the version 3.0.0 CNN/dailymail dataset as the sharegpt format, and store the data in data/formatted_sharegpt/cnn_dailymail/ directory in jsonl format.
+
+  Note: This script uses **"Given the above text, please write a summary in the format of CNN article highlights. The summary is:"** as the prompt.
    ```bash
-   wget -c http://lepage-lab.ips.waseda.ac.jp/media/filer_public/2e/c1/2ec107ef-4223-4f12-9dc5-5099aa3f856f/acl-agd.zip
-   unzip acl-agd.zip -d acl-agd
-   cd acl-agd
-   mv test.json test.jsonl
-   mv train.json train.jsonl
-   mv validation.json validation.jsonl
-   cd ~/LLM_conclusion
+   python scripts/prepare_summarization_data.py
    ```
    
 ### Running the Data Processing Pipeline
+run_data_processing.sh script is the universal utility to process the dataset of RCT-200k and Non-RCT.
+It supports formating the data with 4 different prompts in sharegpt format. 
 
 ```bash
 ./run_data_processing.sh
@@ -174,7 +173,7 @@ Each data entry follows this JSON format:
 }
 ```
 
-## Experiments
+## Experiments for RCT and Non-RCT
 
 ### Non-Fine-tuning Baseline
 
@@ -248,15 +247,14 @@ python scripts/evaluate_with_LLM.py \
 - `--delay`: Delay between API calls in seconds (default: 1.0, adjust based on your API rate limits)
 
 ### SFT Experiment
-
 The SFT experiment is conducted on RCT and non-RCT datasets separately.
-The base model is `unsloth/Meta-Llama-3.1-8B-Instruct`/ `unsloth/Llama-3.2-3B-Instruct` 
+The base model is `unsloth/Llama-3.2-3B-Instruct` 
 We fine-tune this model on the train split.
-For RCT, our experiment will choose different data sizes (10,000, 50,000, 100,000) to show how the results behave as the training data scales.
+For RCT, our experiment will choose different data sizes (10,000, 50,000) to show how the results behave as the training data scales.
 
 Here is an SFT example:
 ```bash
-./run_data_processing.sh --formatting-only -p 3
+./run_data_processing.sh --formatting-only -p 1
 
 CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --data_path ./data/formatted_sharegpt/rct/train.jsonl \
@@ -270,16 +268,17 @@ CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
     --num_epoch 1 \
     --max_eval_samples 100 \
     --eval_steps 400 \
-    --output_path output/models/prompt3/llama3.2-3b-rct50k
+    --output_path output/models/prompt1/llama3.2-3b-rct50k
 ```
 
 After fine-tuning the model, perform inference and evaluate the results:
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/sft_inference.py \
-    --saved_path output/models/prompt3/llama3.2-3b-rct10k/lora_model \
+    --saved_path output/models/prompt1/llama3.2-3b-rct10k/lora_model \
     --data_path data/formatted_sharegpt/non_rct/test.jsonl \
-    --output_path output/predictions/llama3.2-3b-rct10k/prompt3/non_rct.jsonl \
-    --test_num 2000
+    --output_path output/predictions/llama3.2-3b-rct10k/prompt1/non_rct.jsonl \
+    --test_num 2000 \
+    --max_seq_length 2048
 ```
 
 Changing the prediction directory in evaluate.sh then:
@@ -293,23 +292,11 @@ Plot distributions for a metric across all results:
 ```bash
 python plot/plot_distribution.py \
   --input_paths \
-    output/eval_results/llama3.1-8b-base/prompt1/rct_results.jsonl \
-    output/eval_results/llama3.1-8b-rct10k/prompt1/rct_results.jsonl \
-    output/eval_results/llama3.1-8b-rct50k/prompt1/rct_results.jsonl \
-  --labels "llama3.1-8b" "llama3.1-8b-rct10k" "llama3.1-8b-rct50k" \
-  --output_dir output/figures/compare_3.1/prompt1-rct-meteor \
-  --plot_metric meteor \
-  --bin_size 50
-```
-
-```bash
-python plot/plot_distribution.py \
-  --input_paths \
-    output/eval_results/llama3.2-3b-base/prompt3/rct_results.jsonl \
-    output/eval_results/llama3.2-3b-rct10k/prompt3/rct_results.jsonl \
-    output/eval_results/llama3.2-3b-rct50k/prompt3/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
+    output/eval_results/llama3.2-3b-rct50k/prompt1/rct_results.jsonl \
   --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
-  --output_dir output/figures/compare_3.2/prompt3-rct-rougel \
+  --output_dir output/figures/compare_3.2/prompt1-rct-rougel \
   --plot_metric rougeL \
   --bin_size 50
 ```
@@ -328,26 +315,7 @@ python plot/plot_accumulative.py \
   --num_points 1000
 ```
 
-```bash
-python plot/plot_accumulative.py \
-  --input_paths \
-    output/eval_results/llama3.2-3b-base/prompt3/rct_results.jsonl \
-    output/eval_results/llama3.2-3b-rct10k/prompt3/rct_results.jsonl \
-    output/eval_results/llama3.2-3b-rct50k/prompt3/rct_results.jsonl \
-  --labels "llama3.2-3b" "llama3.2-3b-rct10k" "llama3.2-3b-rct50k" \
-  --output_dir output/figures/compare_3.2/prompt3-rct-cdf \
-  --plot_metric word_count_prediction \
-  --num_points 1000
-```
-
 Create baseline bar charts across prompts and a comprehensive table (reads JSONL reports produced by evaluate.sh):
-
-```bash
-python plot/plot_baseline.py \
-  --eval_root output/eval_results \
-  --model_name llama3.1-8b-base \
-  --out_dir output/figures/llama3.1-8b-base
-```
 
 ```bash
 python plot/plot_baseline.py \
@@ -365,43 +333,50 @@ python scripts/select_top_results.py \
 --top_n 5 \
 >> output/eval_results/llama3.2-3b-base/prompt1/rct_results_top_5_meteor.txt
 ```
-```bash
-python scripts/select_top_results.py \
---input_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
---output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results_top_5_meteor.json \
---selection_metric meteor \
---top_n 5 \
->> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results_top_5_meteor.txt
-```
-
-```bash
-python scripts/select_top_results.py \
-  --compare \
-  --file1_path output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
-  --file2_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
-  --output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_rougeL_compared_to_base.json \
-  --selection_metric rougeL \
-  --top_n 5 \
-  >> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_rougeL_compared_to_base.txt
-```
-
-```bash
-python scripts/select_top_results.py \
-  --compare \
-  --file1_path output/eval_results/llama3.2-3b-base/prompt1/rct_results.jsonl \
-  --file2_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_results.jsonl \
-  --output_path output/eval_results/llama3.2-3b-rct10k/prompt1/rct_meteor_compared_to_base.json \
-  --selection_metric meteor \
-  --top_n 5 \
-  >> output/eval_results/llama3.2-3b-rct10k/prompt1/rct_meteor_compared_to_base.txt
-```
 
 ### Notes and Tips
+- Ensure **using the same prompt** for finetuning and inference.
+- `./run_data_processing.sh --formatting-only -p i` to format all data in a chosen prompt
 - `evaluate.sh` expects predictions under `output/predictions/{MODEL}/prompt{i}/{split}.jsonl`.
+- Rename the output path correctly according to which prompt is used and the model
 
-### TODO
-- [x] Finetune Llama3.2-3B with 50k RCT data (Prompt 1)
-- [x] Test the Llama3.2-3B RCT-50k fine-tuned model on the RCT test split
-- [ ] Scale up finetuning experiments to 100k RCT samples
-- [ ] Run finetuning experiments using Prompt 3
-- [ ] Integrate Non-PubMed datasets into the finetuning and evaluation pipeline
+## Experiments for CNN/dailymail
+Set `test_num` to 99999 (larger than the number of records in test split) for testing all records 
+
+Note: for CNN/dailymail task, max_seq_length=2048(default) is not enough, set it to 16384 or lager
+
+### Baseline inference
+```bash
+CUDA_VISIBLE_DEVICES=0 python scripts/inference_llama-3.py \
+    --model_name  unsloth/Llama3.2-3B-Instruct \
+    --data_path data/formatted_sharegpt/cnn_dailymail/test.jsonl\
+    --output_path output/predictions/cnn_dailymail/llama3.2-3b-base.jsonl \
+    --test_num 99999 \
+    --print_every_10_items \
+    --max_seq_length 16384
+```
+### FineTuning
+**Choose any data_size**
+```bash
+CUDA_VISIBLE_DEVICES=0 python scripts/sft.py \
+    --data_path data/formatted_sharegpt/cnn_dailymail/train.jsonl \
+    --data_size 20000 \
+    --seed 3407 \
+    --data_format sharegpt \
+    --model unsloth/Llama-3.2-3B-Instruct \
+    --max_seq_length 16384 \
+    --lr 1e-4 \
+    --batch_size 16 \
+    --num_epoch 1 \
+    --max_eval_samples 100 \
+    --eval_steps 400 \
+    --output_path output/models/cnn_dailymail/llama3.2-3b-20k
+```
+```bash
+CUDA_VISIBLE_DEVICES=0 python scripts/sft_inference.py \
+    --saved_path output/models/cnn_dailymail/llama3.2-3b-20k \
+    --data_path data/formatted_sharegpt/cnn_dailymail/test.jsonl \
+    --output_path output/predictions/cnn_dailymail/llama3.2-3b-20k.jsonl \
+    --test_num 99999 \
+    --max_seq_length 16384
+```

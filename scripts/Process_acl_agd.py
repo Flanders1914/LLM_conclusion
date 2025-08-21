@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # make this file executable: chmod +x scripts/Process_acl_agd.py
 # python scripts/Process_acl_agd.py ./data/processed/acl-agd train.jsonl
 # python scripts/Process_acl_agd.py ./data/processed/acl-agd validation.jsonl
@@ -20,7 +21,7 @@ def process_acl_agd(output_folder: str, file_name: str):
 
     print(f"[INFO] Starting parsing: {file_path}")
     item_count = 0
-    with open(file_path, "r") as f_in, open(output_path, "w") as f_out:
+    with open(file_path, "r", encoding="utf-8") as f_in, open(output_path, "w", encoding="utf-8") as f_out:
         for line in f_in:
             data_item = json.loads(line)
             item = parse_item(data_item)

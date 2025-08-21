@@ -5,6 +5,10 @@
 
 set -e  # Exit on any error
 
+# Set UTF-8 locale for proper character encoding
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -121,14 +125,7 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Function to check if virtual environment is activated
-check_venv() {
-    if [[ "$VIRTUAL_ENV" == "" ]]; then
-        print_warning "Virtual environment not detected. Please activate your virtual environment first:"
-        echo "source conclusion_env/bin/activate"
-        exit 1
-    fi
-}
+
 
 # Function to check if required data directories exist
 check_data_directories() {
@@ -289,15 +286,6 @@ main() {
         print_error "Please run this script from the LLM_conclusion project root directory"
         exit 1
     fi
-    
-    # Check if Python is available
-    if ! command_exists python; then
-        print_error "Python is not installed or not in PATH"
-        exit 1
-    fi
-    
-    # Check virtual environment
-    check_venv
     
     # Check data directories
     check_data_directories

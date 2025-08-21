@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # CUDA_VISIBLE_DEVICES=0 python scripts/inference_qwen3.py --model_name qwen3 --data_path data/formatted_sharegpt/non_rct/examples.jsonl --output_path output/qwen3/non_rct_examples.jsonl
 # CUDA_VISIBLE_DEVICES=0 python scripts/inference_qwen3.py --model_name qwen3 --data_path data/formatted_sharegpt/rct/dev.jsonl --output_path output/qwen3/rct_dev.jsonl
 # CUDA_VISIBLE_DEVICES=0 python scripts/inference_qwen3.py --model_name qwen3 --data_path data/formatted_sharegpt/non_rct/dev.jsonl --output_path output/qwen3/non_rct_dev.jsonl
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     print(f"Start inference, model: {args.model_name}, data: {args.data_path}, output: {args.output_path}")
     print("------------------------------------------------------------------------------------------------")
 
-    with open(args.data_path, 'r') as fin, open(args.output_path, 'w') as fout:
+    with open(args.data_path, 'r', encoding='utf-8') as fin, open(args.output_path, 'w', encoding='utf-8') as fout:
         for line in fin:
             item = json.loads(line)
             input_text = item['conversations'][0]['value']
@@ -129,7 +130,7 @@ if __name__ == "__main__":
                 'output_with_context': output_with_context,
                 'answer': reference_text,
             }
-            fout.write(json.dumps(return_item) + '\n')
+            fout.write(json.dumps(return_item, ensure_ascii=False) + '\n')
 
             count += 1
             if count >= args.test_num:

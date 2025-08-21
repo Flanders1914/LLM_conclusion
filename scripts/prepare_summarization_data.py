@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # prepare summarization data for training and evaluation
 from datasets import load_dataset
 import json
